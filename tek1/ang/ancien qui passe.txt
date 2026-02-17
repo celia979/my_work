@@ -1,0 +1,49 @@
+
+
+
+int my_ls(char const *filepath, struct dirent *entry)
+{
+    DIR *dir;
+ 
+    dir = opendir("./");
+    if (dir == NULL)
+        perror("opendir");
+    while (entry != NULL) {
+        entry = readdir(dir);
+        if (entry == NULL)
+            break;
+        if (entry->d_name[0] == '.')
+            continue;
+        my_putstr(entry->d_name);
+        my_putchar(' ');
+    }
+    my_putchar('\n');
+    closedir(dir);
+    return 0;
+}
+
+int check_flag(char arg, char const *filepath, struct dirent *entry)
+{
+    if (arg == 'a')
+        flag_a(filepath, entry);
+    if (arg == 'l')
+        return 1;
+    if (arg == 'R')
+        return 1;
+    if (arg == 'd')
+        return 1;
+    if (arg == 't')
+        return 1;
+    return 0;
+}
+
+int main(void)
+{
+    char const *filepath;
+    struct dirent *entry;
+    char arg;
+ 
+    my_ls(filepath, entry);
+    check_flag(arg, filepath, entry);
+    return 0;
+}
