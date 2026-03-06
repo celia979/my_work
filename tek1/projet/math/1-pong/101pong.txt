@@ -1,0 +1,21 @@
+	formule ;
+- the velocity vector of the ball ; |v| = √[(dx/dt)^2 + (dy/dt)^2 + (dz/dt)^2]
+- The coordinates of the ball after a given amount of time ; horloge
+- The angle at which the ball will hit the paddle ; (exo 7 bootstrap math)
+
+int vecteur_norme(int x, int y, int z, int V)
+{
+    int i = x * x;
+    int o = y * y;
+    int p = z * z;
+
+    printf("%f", (sqrt(i)));
+    my_putchar(',');
+    my_putchar(' ');
+    printf("%f", (sqrt(o)));
+    my_putchar(',');
+    my_putchar(' ');
+    printf("%f", (sqrt(p)));
+    my_putchar('\n');
+    return 0;
+}

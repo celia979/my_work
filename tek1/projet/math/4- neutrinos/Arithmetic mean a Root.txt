@@ -1,0 +1,3 @@
+Arithmetic mean = a
+Root mean square = rms
+Harmonic mean (if 𝑥𝑖 > 0) = h
