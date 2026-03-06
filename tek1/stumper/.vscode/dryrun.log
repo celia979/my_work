@@ -1,6 +1,0 @@
-make --dry-run --keep-going --print-directory
-make: Entering directory '/home/celia/epitech/stumper'
-make: Leaving directory '/home/celia/epitech/stumper'
- 
-make: *** No targets specified and no makefile found.  Stop.
-
