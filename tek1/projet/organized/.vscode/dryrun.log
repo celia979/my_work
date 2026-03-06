@@ -1,0 +1,6 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/celia/epitech/projet/organized'
+make: Leaving directory '/home/celia/epitech/projet/organized'
+ 
+make: *** No targets.  Stop.
+
