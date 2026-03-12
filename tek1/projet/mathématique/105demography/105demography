@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+
+import sys
+import csv
+import math
+
+def help():
+    print("USAGE")
+    print("    ./105demography [code]+\n")
+    print("DESCRIPTION")
+    print("    code     country code")
+
+def parse_data(country_codes):
+    population_by_year = {}
+    countries = []
+    
+    try:
+        with open('105demography_data.csv', 'r') as file:
+            reader = csv.DictReader(file, delimiter=';')
+            
+            for row in reader:
+                code = row.get('Country Code', '').strip()
+                
+                if code in country_codes:
+                    country_name = row.get('Country Name', code)
+                    if country_name not in countries:
+                        countries.append(country_name)
+                    
+                    for year in range(1960, 2018):
+                        year_str = str(year)
+                        if year_str in row and row[year_str]:
+                            try:
+                                population = float(row[year_str]) / 1000000.0
+                                
+                                if year not in population_by_year:
+                                    population_by_year[year] = 0
+                                population_by_year[year] += population
+                                
+                            except (ValueError, TypeError):
+                                continue
+            if (len(countries) != len(country_codes)):
+                print("Error: no valid country codes found")
+                sys.exit(84)
+
+        if not population_by_year:
+            print("Error: no data available", file=sys.stderr)
+            sys.exit(84)
+        
+        all_data = [(year, pop) for year, pop in sorted(population_by_year.items())]
+        countries.sort()
+        
+        return all_data, countries
+    
+    except FileNotFoundError:
+        print("Error: 105demography_data.csv not found", file=sys.stderr)
+        sys.exit(84)
+    except Exception as e:
+        print(f"Error reading file: {e}", file=sys.stderr)
+        sys.exit(84)
+
+def calculate_sums(data_points):
+    n = len(data_points)
+    sum_x = sum(x for x, y in data_points)
+    sum_y = sum(y for x, y in data_points)
+    sum_x2 = sum(x * x for x, y in data_points)
+    sum_xy = sum(x * y for x, y in data_points)
+    sum_y2 = sum(y * y for x, y in data_points)
+    
+    return n, sum_x, sum_y, sum_x2, sum_xy, sum_y2
+
+def linear_fit(data_points, x_on_y=False):
+    if x_on_y:
+        data_points = [(y, x) for x, y in data_points]
+    
+    n, sum_x, sum_y, sum_x2, sum_xy, sum_y2 = calculate_sums(data_points)
+    
+    denominator = n * sum_x2 - sum_x * sum_x
+    
+    if denominator == 0:
+        return 0, 0
+    
+    a = (n * sum_xy - sum_x * sum_y) / denominator
+    b = (sum_y * sum_x2 - sum_x * sum_xy) / denominator
+    
+    return a, b
+
+def format_equation_fit1(a, b):
+    if b < 0:
+        return f"{a:.2f} X - {abs(b):.2f}"
+    else:
+        return f"{a:.2f} X + {b:.2f}"
+
+def format_equation_fit2(a, b):
+    if b < 0:
+        return f"{a:.2f} Y - {abs(b):.2f}"
+    else:
+        return f"{a:.2f} Y + {b:.2f}"
+
+def calculate_rmsd_fit1(data_points, a, b):
+    n = len(data_points)
+    sum_squared_errors = 0
+    
+    for x, y in data_points:
+        predicted_y = a * x + b
+        error = y - predicted_y
+        sum_squared_errors += error * error
+    
+    rmsd = math.sqrt(sum_squared_errors / n)
+    return rmsd
+
+def calculate_rmsd_fit2(data_points, a, b):
+    n = len(data_points)
+    sum_squared_errors = 0
+    
+    for x, y in data_points:
+        predicted_x = a * y + b
+        error_x = x - predicted_x
+        
+        if a != 0:
+            error_y = error_x / a
+        else:
+            error_y = 0
+        
+        sum_squared_errors += error_y * error_y
+    
+    rmsd = math.sqrt(sum_squared_errors / n)
+    return rmsd
+
+def calculate_correlation(data_points):
+    n, sum_x, sum_y, sum_x2, sum_xy, sum_y2 = calculate_sums(data_points)
+    
+    mean_x = sum_x / n
+    mean_y = sum_y / n
+    
+    numerator = sum((x - mean_x) * (y - mean_y) for x, y in data_points)
+    
+    var_x = sum((x - mean_x) ** 2 for x, y in data_points)
+    var_y = sum((y - mean_y) ** 2 for x, y in data_points)
+    
+    denominator = math.sqrt(var_x * var_y)
+    
+    if denominator == 0:
+        return 0
+    
+    r = numerator / denominator
+    return r
+
+def predict_population(a, b, year, x_on_y=False):
+    if x_on_y:
+        return (year - b) / a if a != 0 else 0
+    else:
+        return a * year + b
+
+def main():
+    if len(sys.argv) < 2:
+        print("Error: missing arguments", file=sys.stderr)
+        sys.exit(84)
+    
+    if sys.argv[1] == "-h":
+        help()
+        return
+    
+    country_codes = sys.argv[1:]
+    
+    all_data, countries = parse_data(country_codes)
+    
+    country_name = ", ".join(countries)
+    print(f"Country: {country_name}")
+    
+    print("Fit1")
+    a_x, b_x = linear_fit(all_data, x_on_y=False)
+    print(f"    Y = {format_equation_fit1(a_x, b_x)}")
+    
+    rmsd_fit1 = calculate_rmsd_fit1(all_data, a_x, b_x)
+    print(f"    Root-mean-square deviation: {rmsd_fit1:.2f}")
+    
+    pop_2050_fit1 = predict_population(a_x, b_x, 2050, x_on_y=False)
+    print(f"    Population in 2050: {pop_2050_fit1:.2f}")
+    
+    print("Fit2")
+    a_y, b_y = linear_fit(all_data, x_on_y=True)
+    print(f"    X = {format_equation_fit2(a_y, b_y)}")
+    
+    rmsd_fit2 = calculate_rmsd_fit2(all_data, a_y, b_y)
+    print(f"    Root-mean-square deviation: {rmsd_fit2:.2f}")
+    
+    pop_2050_fit2 = predict_population(a_y, b_y, 2050, x_on_y=True)
+    print(f"    Population in 2050: {pop_2050_fit2:.2f}")
+    
+    correlation = calculate_correlation(all_data)
+    print(f"Correlation: {correlation:.4f}")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+##
+## EPITECH PROJECT, 2025
+## 104neutrinos
+## File description:
+## 104neutrinos
+##
+
+import sys
+import math as m
+
+def help():
+    print("USAGE")
+    print("    ./104neutrinos n a h sd\n")
+    print("DESCRIPTION")
+    print("    n number of values")
+    print("    a arithmetic mean")
+    print("    h harmonic mean")
+    print("    sd standard deviation")
+
+def check_error():
+    if len(sys.argv) != 5:
+        sys.exit(84)
+    
+    try:
+        n = float(sys.argv[1])
+        a = float(sys.argv[2])
+        h = float(sys.argv[3])
+        sd = float(sys.argv[4])
+        
+        if n <= 0:
+            sys.exit(84)
+        if sd < 0:
+            sys.exit(84)
+        if h == 0:
+            sys.exit(84)
+        
+        return n, a, h, sd
+        
+    except (ValueError, IndexError):
+        sys.exit(84)
+
+def calc_harmonic(val, n, h):
+    n_h = n / h
+    n_h += 1 / val
+    n_h = (n + 1) / n_h
+    return n_h
+
+def calc_rms(val, sd, a, n):
+    rms = sd**2
+    rms = m.sqrt(rms + a**2)
+    rms = rms**2 * n
+    rms = rms + val**2
+    rms = m.sqrt(rms / (n + 1))
+    return rms
+
+def calc_mean(val, a, n):
+    n_a = ((a * n) + val) / (n + 1)
+    return n_a
+
+def calc_deviation(rms, a):
+    sd = m.sqrt(rms**2 - a**2)
+    return sd
+
+def print_result(n, sd, a, rms, h):
+    print(f"    Number of values:\t{n}")
+    print(f"    Standard deviation:\t{float(sd):.2f}")
+    print(f"    Arithmetic mean:\t{float(a):.2f}")
+    print(f"    Root mean square:\t{float(rms):.2f}")
+    print(f"    Harmonic mean:\t{float(h):.2f}")
+    print("")
+
+def boucle(n, a, h, sd):
+    val = input("Enter next value: ")
+    if val == "END":
+        return
+    
+    try:
+        val = float(val)
+    except (IndexError, ValueError):
+        sys.exit(84)
+    
+    try:
+        h = calc_harmonic(val, n, h)
+        rms = calc_rms(val, sd, a, n)
+        a = calc_mean(val, a, n)
+        sd = calc_deviation(rms, a)
+    except (ZeroDivisionError, ValueError):
+        sys.exit(84)
+    
+    n += 1
+    print_result(n, sd, a, rms, h)
+    boucle(n, a, h, sd)
+
+def main():
+    if len(sys.argv) == 2 and sys.argv[1] == "-h":
+        help()
+        return
+    
+    n, a, h, sd = check_error()
+    
+    boucle(n, a, h, sd)
+
+main()

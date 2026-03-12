@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+import sys
+import math
+
+def creer_vecteur(x, y):
+    return [[x], [y], [1]]
+
+def matrice_translation(i, j):
+    return [[1, 0, i], [0, 1, j], [0, 0, 1]]
+
+def matrice_scaling(m, n):
+    return [[m, 0, 0], [0, n, 0], [0, 0, 1]]
+
+def matrice_rotation(degres):
+    radians = degres * math.pi / 180
+    cos_theta = math.cos(radians)
+    sin_theta = math.sin(radians)
+    return [[cos_theta, -sin_theta, 0], [sin_theta, cos_theta, 0], [0, 0, 1]]
+
+def matrice_reflexion(degres):
+    radians = degres * math.pi / 180
+    cos_2theta = math.cos(2 * radians)
+    sin_2theta = math.sin(2 * radians)
+    return [[cos_2theta, sin_2theta, 0], [sin_2theta, -cos_2theta, 0], [0, 0, 1]]
+
+def multiplier_matrice_vecteur(matrice, vecteur):
+    resultat = [[0], [0], [0]]
+    for i in range(3):
+        somme = 0
+        for j in range(3):
+            somme += matrice[i][j] * vecteur[j][0]
+        resultat[i][0] = somme
+    return resultat
+
+def multiplier_matrices(mat1, mat2):
+    resultat = [[0, 0, 0], [0, 0, 0], [0, 0, 1]]
+    for i in range(3):
+        for j in range(3):
+            somme = 0
+            for k in range(3):
+                somme += mat1[i][k] * mat2[k][j]
+            resultat[i][j] = somme
+    return resultat
+
+def afficher_matrice(matrice):
+    for ligne in matrice:
+        print(f"{ligne[0]:.2f} {ligne[1]:.2f} {ligne[2]:.2f}")
+
+def afficher_aide():
+    print("USAGE")
+    print("    ./102architect x y transfo1 arg11 [arg12] [transfo2 arg21 [arg22]] ...")
+    print()
+    print("DESCRIPTION")
+    print("    x      abscissa of the original point")
+    print("    y      ordinate of the original point")
+    print("    transfo arg1 [arg2]")
+    print("    -t i j   translation along vector (i, j)")
+    print("    -z m n   scaling by factors m (x-axis) and n (y-axis)")
+    print("    -r d     rotation centered in O by a d degree angle")
+    print("    -s d     reflection over the axis passing through O with an inclination")
+    print("             angle of d degrees")
+
+def main():
+    if len(sys.argv) >= 2 and sys.argv[1] == "-h":
+        afficher_aide()
+        sys.exit(0)
+    
+    if len(sys.argv) < 4:
+        print("Error: not enough arguments", file=sys.stderr)
+        sys.exit(84)
+    
+    try:
+        x = float(sys.argv[1])
+        y = float(sys.argv[2])
+    except ValueError:
+        print("Error: invalid coordinates", file=sys.stderr)
+        sys.exit(84)
+    
+    vecteur = creer_vecteur(x, y)
+    matrice_finale = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    i = 3
+    premiere_transfo = True
+    
+    while i < len(sys.argv):
+        try:
+            transformation = sys.argv[i]
+            
+            if transformation == "-t":
+                if i + 2 >= len(sys.argv):
+                    print("Error: missing arguments for translation", file=sys.stderr)
+                    sys.exit(84)
+                i_val = float(sys.argv[i + 1])
+                j_val = float(sys.argv[i + 2])
+                if not premiere_transfo:
+                    print()
+                print(f"Translation along vector ({i_val:.0f}, {j_val:.0f})")
+                matrice = matrice_translation(i_val, j_val)
+                afficher_matrice(matrice)
+                matrice_finale = multiplier_matrices(matrice, matrice_finale)
+                premiere_transfo = False
+                i += 3
+                
+            elif transformation == "-z":
+                if i + 2 >= len(sys.argv):
+                    print("Error: missing arguments for scaling", file=sys.stderr)
+                    sys.exit(84)
+                m = float(sys.argv[i + 1])
+                n = float(sys.argv[i + 2])
+                if not premiere_transfo:
+                    print()
+                print(f"Scaling by factors {m:.0f} and {n:.0f}")
+                matrice = matrice_scaling(m, n)
+                afficher_matrice(matrice)
+                matrice_finale = multiplier_matrices(matrice, matrice_finale)
+                premiere_transfo = False
+                i += 3
+                
+            elif transformation == "-r":
+                if i + 1 >= len(sys.argv):
+                    print("Error: missing argument for rotation", file=sys.stderr)
+                    sys.exit(84)
+                degres = float(sys.argv[i + 1])
+                if not premiere_transfo:
+                    print()
+                print(f"Rotation by a {degres:.0f} degree angle")
+                matrice = matrice_rotation(degres)
+                afficher_matrice(matrice)
+                matrice_finale = multiplier_matrices(matrice, matrice_finale)
+                premiere_transfo = False
+                i += 2
+                
+            elif transformation == "-s":
+                if i + 1 >= len(sys.argv):
+                    print("Error: missing argument for reflection", file=sys.stderr)
+                    sys.exit(84)
+                degres = float(sys.argv[i + 1])
+                if not premiere_transfo:
+                    print()
+                print(f"Reflection over an axis with an inclination angle of {degres:.0f} degrees")
+                matrice = matrice_reflexion(degres)
+                afficher_matrice(matrice)
+                matrice_finale = multiplier_matrices(matrice, matrice_finale)
+                premiere_transfo = False
+                i += 2
+                
+            else:
+                print(f"Error: unknown transformation '{transformation}'", file=sys.stderr)
+                sys.exit(84)
+                
+        except (ValueError, IndexError):
+            print("Error: invalid arguments", file=sys.stderr)
+            sys.exit(84)
+    
+    resultat = multiplier_matrice_vecteur(matrice_finale, vecteur)
+    if not premiere_transfo:
+        print()
+    print(f"({x:.2f}, {y:.2f}) => ({resultat[0][0]:.2f}, {resultat[1][0]:.2f})")
+
+if __name__ == "__main__":
+    main()
